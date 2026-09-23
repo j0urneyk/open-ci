@@ -1,0 +1,42 @@
+name: open-ci runner selector
+description: Select a runner from organization free usage and ordered provider policies.
+branding:
+  icon: shuffle
+  color: blue
+inputs:
+  config:
+    description: Organization/repository OPEN_CI_CONFIG JSON.
+    default: ''
+  priority:
+    description: Optional JSON provider array replacing configured priority.
+    default: ''
+  config-path:
+    description: Explicit repository policy path; empty uses optional .github/open-ci.yml.
+    default: ''
+  github-token:
+    description: Calling repository token with contents read access.
+    required: true
+  billing-token:
+    description: Optional token with organization billing read access.
+    default: ''
+  app-id:
+    description: GitHub App ID for organization billing access.
+    default: ''
+  app-private-key:
+    description: GitHub App private key; unused when billing-token is supplied.
+    default: ''
+  blacksmith-token:
+    description: Blacksmith organization token.
+    default: ''
+outputs:
+  provider:
+    description: Selected provider identifier.
+  runs-on:
+    description: Runner target encoded as JSON; decode with fromJSON.
+  reason:
+    description: Selection reason including exclusions of earlier candidates.
+runs:
+  using: node24
+  main: action/dist/index.cjs
+  post: action/dist/cleanup.cjs
+  post-if: always()

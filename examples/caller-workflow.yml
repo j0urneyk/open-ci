@@ -1,0 +1,30 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  select-runner:
+    # This example allows only same-repository pull requests onto the self-hosted selector.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ fromJSON(vars.OPEN_CI_SELECTOR_RUNS_ON) }}
+    timeout-minutes: 5
+    outputs:
+      provider: ${{ steps.select.outputs.provider }}
+      runs-on: ${{ steps.select.outputs.runs-on }}
+      reason: ${{ steps.select.outputs.reason }}
+    steps:
+      - id: select
+        uses: j0urneyk/open-ci@v1.0.0
+        with:
+          config: ${{ vars.OPEN_CI_CONFIG }}
+          priority: '["github", "blacksmith", "self-hosted"]'
+          github-token: ${{ github.token }}
+          app-id: ${{ vars.OPEN_CI_GITHUB_APP_ID }}
+          app-private-key: ${{ secrets.OPEN_CI_GITHUB_APP_PRIVATE_KEY }}
+          blacksmith-token: ${{ secrets.OPEN_CI_BLACKSMITH_TOKEN }}
+  test:
+    needs: select-runner
+    runs-on: ${{ fromJSON(needs.select-runner.outputs.runs-on) }}
+    steps:
+      - uses: actions/checkout@v6
+      - run: ./ci/test.sh

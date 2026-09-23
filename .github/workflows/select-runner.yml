@@ -1,0 +1,57 @@
+name: Select an open-ci runner
+on:
+  workflow_call:
+    inputs:
+      priority:
+        description: Optional JSON provider priority array.
+        type: string
+        default: ''
+      config-path:
+        description: Explicit policy path; empty uses optional .github/open-ci.yml.
+        type: string
+        default: ''
+      selector-runs-on:
+        description: JSON selector runner target; defaults to OPEN_CI_SELECTOR_RUNS_ON.
+        type: string
+        default: ''
+    secrets:
+      billing-token:
+        description: Optional organization billing token.
+        required: false
+      app-private-key:
+        description: Optional private key for OPEN_CI_GITHUB_APP_ID.
+        required: false
+      blacksmith-token:
+        description: Optional Blacksmith organization token.
+        required: false
+    outputs:
+      provider:
+        value: ${{ jobs.select.outputs.provider }}
+      runs-on:
+        value: ${{ jobs.select.outputs.runs-on }}
+      reason:
+        value: ${{ jobs.select.outputs.reason }}
+permissions:
+  contents: read
+jobs:
+  select:
+    runs-on: ${{ fromJSON(inputs.selector-runs-on || vars.OPEN_CI_SELECTOR_RUNS_ON) }}
+    timeout-minutes: 5
+    outputs:
+      provider: ${{ steps.select.outputs.provider }}
+      runs-on: ${{ steps.select.outputs.runs-on }}
+      reason: ${{ steps.select.outputs.reason }}
+    steps:
+      - name: Select provider from organization usage
+        id: select
+        # Resolve the action from this reusable workflow's repository and exact commit.
+        uses: $/action
+        with:
+          config: ${{ vars.OPEN_CI_CONFIG }}
+          priority: ${{ inputs.priority }}
+          config-path: ${{ inputs.config-path }}
+          github-token: ${{ github.token }}
+          billing-token: ${{ secrets.billing-token }}
+          app-id: ${{ vars.OPEN_CI_GITHUB_APP_ID }}
+          app-private-key: ${{ secrets.app-private-key }}
+          blacksmith-token: ${{ secrets.blacksmith-token }}

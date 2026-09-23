@@ -1,0 +1,27 @@
+# Demonstration values only: verify your organization's allowance, SKU factors,
+# and reset boundaries before enabling metered providers.
+version: 1
+priority: [github, blacksmith, self-hosted]
+providers:
+  github:
+    runs-on: ubuntu-24.04
+    # Illustrative GitHub Free organization allowance; adjust for your account.
+    free-minutes: 2000
+    reserve-percent: 5
+    billing-cycle:
+      anchor: '2026-01-01T00:00:00Z'
+    # This example assumes only this SKU has consumed allowance.
+    # Any other observed minute SKU causes GitHub to be skipped until mapped.
+    sku-minute-multipliers:
+      actions_linux: 1
+  blacksmith:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    free-minutes: 3000
+    reserve-percent: 5
+    billing-cycle:
+      # Example only: a month-to-date view does not establish the reset timezone.
+      anchor: '2026-01-01T00:00:00Z'
+  self-hosted:
+    runs-on:
+      group: ci-workers
+      labels: [linux, x64]
