@@ -39,9 +39,9 @@ CLI upgrades require updating the version and checksums together and rerunning c
 
 ## Action and workflow distribution
 
-The root JavaScript Action is called with `uses: j0urneyk/open-ci@v1.0.0`. `action.yml` defines the canonical inputs, outputs, Node.js 24 runtime, and main/post bundle paths. Both the root entrypoint and the existing `j0urneyk/open-ci/action@REF` entrypoint execute the same bundles under `action/dist/`. The build generates the subdirectory metadata from the root contract to prevent drift.
+The root JavaScript Action is called with `uses: j0urneyk/open-ci@v1`. `action.yml` defines the canonical inputs, outputs, Node.js 24 runtime, and main/post bundle paths. Both the root entrypoint and the existing `j0urneyk/open-ci/action@REF` entrypoint execute the same bundles under `action/dist/`. The build generates the subdirectory metadata from the root contract to prevent drift.
 
-The `v1.0.0` tag identifies the published release; a full commit SHA pins exact code. Release commits include both generated bundles and the generated subdirectory metadata.
+The `v1` tag follows compatible stable releases. Full-version tags such as `v1.0.1` identify fixed releases; a full commit SHA pins exact code. Maintainers update the major tag explicitly using the [release guide](releasing.md); GitHub does not resolve it as a semantic-version range. Release commits include both generated bundles and the generated subdirectory metadata.
 
 The reusable workflow uses `$/action`, the official GitHub.com self-repository reference, so the action is resolved from the called workflow's repository at the running commit. It needs no checkout of caller code and no fixed repository owner or branch-head reference. [Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsuses)
 

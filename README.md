@@ -24,7 +24,7 @@ For the full provider example, see [examples/open-ci.yml](examples/open-ci.yml) 
 
 ## Use the Action
 
-Use `j0urneyk/open-ci@v1.0.0` in a selector job, then pass its output to your build or test job. The Action reads policy through the GitHub API, so the selector does not need to check out your repository. The integration targets GitHub.com.
+Use `j0urneyk/open-ci@v1` in a selector job, then pass its output to your build or test job. The Action reads policy through the GitHub API, so the selector does not need to check out your repository. The integration targets GitHub.com.
 
 ```yaml
 permissions:
@@ -39,7 +39,7 @@ jobs:
       runs-on: ${{ steps.select.outputs.runs-on }}
     steps:
       - id: select
-        uses: j0urneyk/open-ci@v1.0.0
+        uses: j0urneyk/open-ci@v1
         with:
           config: ${{ vars.OPEN_CI_CONFIG }}
           github-token: ${{ github.token }}
@@ -53,7 +53,7 @@ jobs:
 
 Keep your existing steps in place of the example test script. The example skips fork pull requests; choose which events may use your self-hosted runners before adapting it. Use the [metered-provider caller example](examples/caller-workflow.yml) to pass Secrets explicitly. A `priority` JSON input replaces the policy's order; omitted providers are never added. Outputs are `provider`, JSON `runs-on`, and `reason`. Job Summary records the decisions and available usage evidence.
 
-`v1.0.0` identifies the published release. Use a full commit SHA to pin exact code. The reusable workflow is also available at `j0urneyk/open-ci/.github/workflows/select-runner.yml@v1.0.0` for callers that prefer a complete selector job; see [calling the reusable workflow](docs/configuration.md#calling-the-reusable-workflow).
+`v1` follows the latest compatible stable v1 release as maintainers update that tag. Use `@v1.0.1` for a specific release or a full commit SHA to pin exact code. The reusable workflow is also available at `j0urneyk/open-ci/.github/workflows/select-runner.yml@v1` for callers that prefer a complete selector job; see [calling the reusable workflow](docs/configuration.md#calling-the-reusable-workflow).
 
 ## Credentials and limits
 
@@ -76,7 +76,7 @@ npm run verify
 
 The root `action.yml` is the input/output contract. The build writes the committed Node bundles under `action/dist/` and generates `action/action.yml` for the existing subdirectory entrypoint; consumers do not install npm dependencies. Tests use synthetic provider responses. An optional real-CLI check against a local synthetic API is available with `node scripts/verify-blacksmith-cli.mjs /path/to/blacksmith`; it requires the checksum-pinned 0.4.60 binary and does not contact a real organization.
 
-See the [configuration reference](docs/configuration.md) for policy and workflow settings, and [provider contracts](docs/provider-contracts.md) for API behavior, usage interpretation, and integration requirements.
+See the [configuration reference](docs/configuration.md) for policy and workflow settings, [provider contracts](docs/provider-contracts.md) for API behavior, and the [release guide](docs/releasing.md) for publishing versions and updating the major tag.
 
 ## License
 

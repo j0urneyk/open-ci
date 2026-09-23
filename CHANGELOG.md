@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+## 1.0.1 - 2026-09-23
+
 - Honor GitHub API retry and rate-limit reset deadlines without shortening server waits. Stop requests whose required wait exceeds five seconds, including follow-up requests with the same credential, so billing lookup failures can fall back safely.
 - License open-ci under MIT and link the license from the README.
+- Document release management and provide the `v1` compatibility tag alongside versioned releases.
 
 ## 1.0.0 - 2026-09-23
 

@@ -55,7 +55,7 @@ Compare the adapter's normalized usage with the dashboard's free-tier consumptio
 
 ## Workflow inputs, Variables, and Secrets
 
-Call the root Action with `uses: j0urneyk/open-ci@v1.0.0` in `steps`. Pass configuration, Variables, and Secrets explicitly through `with`; the Action does not read the caller's `vars` or `secrets` contexts automatically. Set the selector job's runner, timeout, and job outputs in the calling workflow as shown in the [caller example](../examples/caller-workflow.yml).
+Call the root Action with `uses: j0urneyk/open-ci@v1` in `steps`. Pass configuration, Variables, and Secrets explicitly through `with`; the Action does not read the caller's `vars` or `secrets` contexts automatically. Set the selector job's runner, timeout, and job outputs in the calling workflow as shown in the [caller example](../examples/caller-workflow.yml).
 
 | Name | Location | Meaning |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ The optional reusable workflow provides the selector job, its five-minute timeou
 jobs:
   select-runner:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    uses: j0urneyk/open-ci/.github/workflows/select-runner.yml@v1.0.0
+    uses: j0urneyk/open-ci/.github/workflows/select-runner.yml@v1
     with:
       selector-runs-on: '["self-hosted","open-ci-selector"]'
     secrets:
