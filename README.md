@@ -57,7 +57,7 @@ Keep your existing steps in place of the example test script. The example skips 
 
 ## Credentials and limits
 
-The `github-token` input reads repository metadata and the policy file at the run's `GITHUB_SHA`. Billing is a separate permission. For GitHub billing, pass `vars.OPEN_CI_GITHUB_APP_ID` as `app-id` and an organization-installed App's private key as `app-private-key`, or pass an existing billing token as `billing-token`. The billing credential needs organization `Administration: read` and repository `Metadata: read` access to every repository with reported Actions usage. For a fine-grained PAT, select the organization as resource owner and all its repositories; Contents access is not required for billing. Public repository usage is excluded before summing private repository minutes across the organization. Generated installation tokens are revoked after the lookup.
+The `github-token` input reads repository metadata and the policy file at the run's `GITHUB_SHA`. Billing is a separate permission. For GitHub billing, pass `vars.OPEN_CI_GITHUB_APP_ID` as `app-id` and an organization-installed App's private key as `app-private-key`, or pass an existing billing token as `billing-token`. The billing credential needs organization `Administration: read` and repository `Metadata: read` access to every repository with reported Actions usage. For a fine-grained PAT, select the organization as resource owner and all its repositories; Contents access is not required for billing. Public repository usage is excluded before summing private repository minutes across the organization. Generated installation tokens are revoked after the lookup when the API permits it. If a rate-limit cooldown prevents revocation, open-ci stops further requests and the token remains valid until its normal expiry.
 
 Store credentials in Actions Secrets and pass them explicitly from the caller. On GitHub Free, organization Secrets and Variables are unavailable to private repositories; use repository Secrets and Variables instead. The repository `GITHUB_TOKEN` is not a billing token. The [configuration reference](docs/configuration.md#workflow-inputs-variables-and-secrets) maps App ID, PEM private key, and Blacksmith token to their caller settings.
 
@@ -77,3 +77,7 @@ npm run verify
 The root `action.yml` is the input/output contract. The build writes the committed Node bundles under `action/dist/` and generates `action/action.yml` for the existing subdirectory entrypoint; consumers do not install npm dependencies. Tests use synthetic provider responses. An optional real-CLI check against a local synthetic API is available with `node scripts/verify-blacksmith-cli.mjs /path/to/blacksmith`; it requires the checksum-pinned 0.4.60 binary and does not contact a real organization.
 
 See the [configuration reference](docs/configuration.md) for policy and workflow settings, and [provider contracts](docs/provider-contracts.md) for API behavior, usage interpretation, and integration requirements.
+
+## License
+
+open-ci is available under the [MIT License](LICENSE). Bundled third-party code retains its own license notices in [action/dist/LICENSE.yaml](action/dist/LICENSE.yaml).

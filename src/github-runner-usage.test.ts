@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { generateKeyPairSync } from 'node:crypto';
 import { test } from 'node:test';
 import { evaluateGitHubRunner, isStandardGitHubRunner, normalizeGitHubUsage } from './github-runner-usage.ts';
 import { resolveRunnerConfig } from './runner-config.ts';
+import { selectRunnerProvider } from './runner-selection.ts';
 import type { GitHubTransport } from './github-http.ts';
 import type { CallerRepository } from './runner-contract.ts';
 
@@ -89,4 +91,30 @@ test('rejects off-origin and wrong-scope pagination before disclosing a token', 
     await assert.rejects(evaluateGitHubRunner(config(), caller, token, now, transport), /pagination/);
     assert.equal(requests, 1);
   }
+});
+
+test('rate-limited App billing falls back without another API call for token revocation', async () => {
+  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const paths: string[] = [];
+  const transport: GitHubTransport = {
+    now: () => now.getTime(),
+    sleep: async () => assert.fail('long cooldown must not delay fallback'),
+    fetch: async input => {
+      const path = new URL(String(input)).pathname;
+      paths.push(path);
+      if (path.endsWith('/installation')) return Response.json({ id: 123 });
+      if (path.endsWith('/access_tokens')) return Response.json({ token: 'minted-token' });
+      if (path.endsWith('/usage')) return new Response('{}', { status: 429, headers: { 'retry-after': '60' } });
+      assert.fail(`unexpected request during cooldown: ${path}`);
+    },
+  };
+  const policy = resolveRunnerConfig({ priority: ['github', 'self-hosted'], providers: {
+    github: config(), 'self-hosted': { 'runs-on': 'self-hosted' },
+  } }, {});
+  const result = await selectRunnerProvider(policy, async () => evaluateGitHubRunner(config(), caller, {
+    token: '', appId: '123', privateKey: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+  }, now, transport));
+  assert.equal(result.provider, 'self-hosted');
+  assert.match(result.reason, /github:.*cooldown/);
+  assert.deepEqual(paths, ['/orgs/example-org/installation', '/app/installations/123/access_tokens', '/organizations/example-org/settings/billing/usage']);
 });

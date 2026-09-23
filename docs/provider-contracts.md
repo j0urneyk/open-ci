@@ -8,7 +8,9 @@ The adapter uses `GET /organizations/{org}/settings/billing/usage` to discover r
 
 Reports include fully discounted public repository usage; summing the unfiltered organization gross total would overcount included minutes. Discount totals combine included usage and public-runner discounts, so neither gross nor net organization totals alone identify remaining free allowance. [Billing report fields](https://docs.github.com/en/billing/reference/billing-reports)
 
-App installation tokens and fine-grained PATs are supported. Credentials require organization `Administration: read` and repository `Metadata: read` access for every repository appearing in the Actions compute report. Inaccessible metadata makes the provider unavailable; the adapter never silently excludes an unclassified repository. App tokens minted for lookup are revoked afterward, while supplied billing tokens remain caller-owned.
+App installation tokens and fine-grained PATs are supported. Credentials require organization `Administration: read` and repository `Metadata: read` access for every repository appearing in the Actions compute report. Inaccessible metadata makes the provider unavailable; the adapter never silently excludes an unclassified repository. App tokens minted for lookup are revoked afterward when the API permits it; a rate-limit cooldown can prevent revocation, leaving the token valid until its normal expiry. Supplied billing tokens remain caller-owned.
+
+API retries honor server deadlines; a required wait beyond five seconds makes the lookup unavailable instead of sending an early request. The same credential cannot bypass an active cooldown through a follow-up call. See [failure behavior](configuration.md#failure-behavior) for retry and cleanup details.
 
 Current repository visibility is an observation, so visibility changes during the billing period require manual reconciliation. SKU conversion factors must match the account's included allowance; test fixtures and example policy values are not authoritative account settings.
 
