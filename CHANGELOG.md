@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a complete example and configuration guidance for sharing one runner selection across multiple reusable workflows, preserving JSON targets and individual job checks without forwarding billing credentials.
+
 ## 1.0.1 - 2026-09-23
 
 - Honor GitHub API retry and rate-limit reset deadlines without shortening server waits. Stop requests whose required wait exceeds five seconds, including follow-up requests with the same credential, so billing lookup failures can fall back safely.

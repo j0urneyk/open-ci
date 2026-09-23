@@ -114,6 +114,20 @@ Root Action outputs are step outputs. Map each needed value through the selector
 
 Use one selector job and share its outputs through `needs` for jobs that should use the same decision. A separate invocation for a later job obtains a new observation. Selection does not reserve usage, so concurrent jobs and delayed provider reports can exceed an allowance. A queued or running workload is not reassigned after selection.
 
+## Sharing a selection across workflows
+
+One parent can select once and pass the JSON `runs-on` output as a string input named `runner` to multiple reusable workflows. The [complete example](../examples/shared-selection/README.md) includes two children. Copy all three YAML files directly into the caller repository's `.github/workflows/` directory; GitHub does not support nested reusable workflow directories. Each caller job uses `uses` without `runs-on`; the child's execution job owns `runs-on: ${{ fromJSON(inputs.runner) }}`. See GitHub's [reusable workflow input and calling rules](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows).
+
+Preserve the JSON string without adding quotes or converting it into a labels-only representation. String, array, and group/labels targets all use the same input. Pass `provider` as another string input only for provider-specific work, and `reason` only for reporting. Keep billing credentials in the selector; pass only Secrets and permissions that the child actually needs.
+
+Each workload job is scheduled separately on a runner matching the shared target. Sharing the decision does not reduce the number of workload jobs or guarantee the same machine or workspace. Keep checkout and setup in each child, and use explicit artifacts or outputs to pass results between jobs. GitHub describes this allocation in [choosing a runner for a job](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idruns-on).
+
+Each call directly needs the selector and requires successful selection with nonempty output. Failure, cancellation, or a skipped selector prevents child execution and avoids parsing empty JSON. Keep any existing required aggregate gate capable of reporting failure even when children are skipped.
+
+The selector job, including its post actions when the runner remains available, completes and releases its runner before dependent children start. The parent workflow run stays active until its jobs finish. Child job checks have separate progress, outcomes, and logs within that run, typically named `caller-job / child-job`. With one execution job per child, N children plus the selector produce N+1 job checks; matrices and aggregate gates change that count. Confirm actual check names before changing branch requirements.
+
+This works within a single call flow with compatible runner requirements. Separately triggered workflows, including later manual runs, make independent selections. Concurrent and long-running jobs can consume usage beyond the observation made at selection time; no usage is reserved. Keep existing dependencies, publication gates, and event trust rules. If setting concurrency in children, use groups distinct from the parent's: reusing a `github.workflow` group with cancellation can cancel the caller, as described in GitHub's [reusable workflow reference](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations).
+
 ## Adopting an existing CI
 
 Every job using the selector's outputs must list the selector directly in `needs`, alongside its existing dependencies. Keep build, test, and publication gates intact. An `if: always()` aggregate check needs a usable runner even if selection fails; a fixed trusted self-hosted target can report failed or skipped prerequisites without parsing a missing `runs-on` output. It must treat those prerequisites as failure, not silently pass.

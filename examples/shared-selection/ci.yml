@@ -1,0 +1,43 @@
+name: Shared runner CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  select-runner:
+    # Only trusted events may allocate the selector and workload runners.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ fromJSON(vars.OPEN_CI_SELECTOR_RUNS_ON) }}
+    timeout-minutes: 5
+    outputs:
+      # Forward the JSON unchanged so children can use string, array, or group targets.
+      runner: ${{ steps.select.outputs.runs-on }}
+    steps:
+      - id: select
+        uses: j0urneyk/open-ci@v1
+        with:
+          config: ${{ vars.OPEN_CI_CONFIG }}
+          github-token: ${{ github.token }}
+          app-id: ${{ vars.OPEN_CI_GITHUB_APP_ID }}
+          app-private-key: ${{ secrets.OPEN_CI_GITHUB_APP_PRIVATE_KEY }}
+          blacksmith-token: ${{ secrets.OPEN_CI_BLACKSMITH_TOKEN }}
+
+  checks:
+    needs: select-runner
+    if: needs.select-runner.result == 'success' && needs.select-runner.outputs.runner != ''
+    uses: ./.github/workflows/shared-checks.yml
+    with:
+      runner: ${{ needs.select-runner.outputs.runner }}
+
+  tests:
+    needs: select-runner
+    if: needs.select-runner.result == 'success' && needs.select-runner.outputs.runner != ''
+    uses: ./.github/workflows/shared-tests.yml
+    with:
+      runner: ${{ needs.select-runner.outputs.runner }}
