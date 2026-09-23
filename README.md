@@ -6,9 +6,9 @@ Supported providers are GitHub-hosted runners, Blacksmith, and self-hosted runne
 
 ## Setup
 
-Provide a dedicated Linux x64 self-hosted runner for the selector, accessible to each calling repository. It needs a GitHub Actions runner version supporting Node.js 24 actions and outbound access to GitHub and, when selected, Blacksmith. Blacksmith CLI 0.4.60 is downloaded lazily, checked against a pinned SHA-256, authenticated in a temporary directory under `RUNNER_TEMP`, and removed afterward. That job directory must allow executable files; the system temporary directory is used only outside Actions when `RUNNER_TEMP` is absent.
+Use a Linux x64 runner for the selector, accessible to each calling repository. We recommend a dedicated self-hosted runner when possible. It needs a GitHub Actions runner version supporting Node.js 24 actions and outbound access to GitHub and, when selected, Blacksmith. Blacksmith CLI 0.4.60 is downloaded lazily, checked against a pinned SHA-256, authenticated in a temporary directory under `RUNNER_TEMP`, and removed afterward. That job directory must allow executable files; the system temporary directory is used only outside Actions when `RUNNER_TEMP` is absent.
 
-The examples use the organization or repository Variable `OPEN_CI_SELECTOR_RUNS_ON` as a JSON runner target, for example `["self-hosted","open-ci-selector"]`. You can also set the selector job's `runs-on` directly. This is separate from the runners that execute your build jobs: the selector needs a runner before it can read repository configuration.
+The examples use the organization or repository Variable `OPEN_CI_SELECTOR_RUNS_ON` as a JSON runner target, for example `["self-hosted","open-ci-selector"]`. You can also set the selector job's `runs-on` directly. The selector's own runner is configured separately; see [Limitations](#limitations).
 
 Put common JSON policy in `OPEN_CI_CONFIG`, a repository override in `.github/open-ci.yml`, or both. The smallest policy uses only self-hosted workers and needs no billing credentials:
 
@@ -55,7 +55,7 @@ Keep your existing steps in place of the example test script. The example skips 
 
 `v1` follows the latest compatible stable v1 release as maintainers update that tag. Use `@v1.0.1` for a specific release or a full commit SHA to pin exact code. The reusable workflow is also available at `j0urneyk/open-ci/.github/workflows/select-runner.yml@v1` for callers that prefer a complete selector job; see [calling the reusable workflow](docs/configuration.md#calling-the-reusable-workflow).
 
-## Credentials and limits
+## Credentials
 
 The `github-token` input reads repository metadata and the policy file at the run's `GITHUB_SHA`. Billing is a separate permission. For GitHub billing, pass `vars.OPEN_CI_GITHUB_APP_ID` as `app-id` and an organization-installed App's private key as `app-private-key`, or pass an existing billing token as `billing-token`. The billing credential needs organization `Administration: read` and repository `Metadata: read` access to every repository with reported Actions usage. For a fine-grained PAT, select the organization as resource owner and all its repositories; Contents access is not required for billing. Public repository usage is excluded before summing private repository minutes across the organization. Generated installation tokens are revoked after the lookup when the API permits it. If a rate-limit cooldown prevents revocation, open-ci stops further requests and the token remains valid until its normal expiry.
 
@@ -63,7 +63,13 @@ Store credentials in Actions Secrets and pass them explicitly from the caller. O
 
 For Blacksmith, pass an organization token as `blacksmith-token`. A token is not placed in command arguments, logs, or your runner's existing CLI credentials. The action registers its temporary directory for post cleanup, including after cancellation when the runner can execute the post action; active CLI subprocesses stop without triggering fallback when cancelled. Missing credentials skip only the affected candidate. Public standard GitHub-hosted runners and self-hosted-first policies do not query billing. Fork pull requests normally do not receive repository Secrets; choose the provider policy and runner access appropriate for those events.
 
-The default reserve is 5%: a metered candidate is skipped at **95% used**, including equality. You configure the free allowance and reset anchor; open-ci queries usage but does not discover or verify those account settings. This policy covers runner compute minutes, not storage, caches, sticky disks, or other charges. Usage is an observation, not a reservation; simultaneous jobs and provider reporting delays can exceed the allowance. GitHub custom/group targets whose free eligibility cannot be verified are skipped. Unknown minute SKUs also skip GitHub until their allowance factors are explicitly mapped. No provider is retried after a build starts, and queued jobs are not moved to another provider.
+## Limitations
+
+The `priority` policy applies to downstream jobs. The selector needs a runner before it can read configuration or query usage, so its own runner must be configured in advance. open-ci does not choose that runner or update `OPEN_CI_SELECTOR_RUNS_ON`. A self-hosted selector keeps this step independent of hosted providers' remaining free allowances. If no matching selector runner is available, selection cannot start and downstream jobs remain blocked; provider fallback cannot run.
+
+The default reserve is 5%: a metered candidate is skipped at **95% used**, including equality. You configure the free allowance and reset anchor; open-ci queries usage but does not discover or verify those account settings. This policy covers runner compute minutes, not storage, caches, sticky disks, or other charges. Usage is an observation, not a reservation; simultaneous jobs and provider reporting delays can exceed the allowance.
+
+GitHub custom/group targets whose free eligibility cannot be verified are skipped. Unknown minute SKUs also skip GitHub until their allowance factors are explicitly mapped. No provider is retried after a build starts, and queued jobs are not moved to another provider.
 
 ## Development and validation
 
